@@ -1,27 +1,43 @@
 package am.shavigh.dbmigration.service;
 
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import com.google.cloud.translate.v3.LocationName;
+import com.google.cloud.translate.v3.TranslateTextRequest;
+import com.google.cloud.translate.v3.TranslationServiceClient;
 
-import java.util.HashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 @Service
 public class TranslationService {
 
-    private static final String API_URL = "https://translate.google.com/?sl=hy&tl=ru&op=translate";
-    private final RestTemplate restTemplate;
+    // Replace with your project ID
+    private static final Logger log = LoggerFactory.getLogger(TranslationService.class);
 
-    public TranslationService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    private final TranslationServiceClient translationServiceClient;
+
+    public TranslationService(TranslationServiceClient translationServiceClient) {
+        this.translationServiceClient = translationServiceClient;
     }
 
-    public String translateText(String text, String srcLanguage, String targetLanguage) {
-        var requestBody = new HashMap<>();
-        requestBody.put("q", text);
-        requestBody.put("source", srcLanguage);
-        requestBody.put("target", targetLanguage);
-        requestBody.put("format", "text");
+    public String translateText(String text, String sourceLang, String targetLang) {
+        var parent = LocationName.of("directed-potion-456709-k3", "global");
 
-        return restTemplate.postForObject(API_URL, requestBody, String.class);
+        var request = TranslateTextRequest.newBuilder()
+                .setParent(parent.toString())
+                .setMimeType("text/plain")
+                .addContents(text)
+                .setSourceLanguageCode(sourceLang)
+                .setTargetLanguageCode(targetLang)
+                .build();
+
+        var response = translationServiceClient.translateText(request);
+
+        var result =  response.getTranslationsCount() > 0
+                ? response.getTranslations(0).getTranslatedText()
+                : "";
+
+        log.info("Translated text: {}", result);
+        return result;
     }
 }

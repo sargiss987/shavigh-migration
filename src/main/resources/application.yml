@@ -13,3 +13,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
+
+app:
+  translation:
+    auth-file-path: ${AUTH_FILE_PATH}

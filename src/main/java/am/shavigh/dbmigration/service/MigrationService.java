@@ -65,13 +65,13 @@ public class MigrationService {
 
     private List<BibleBook> createBibleBooks(String bookName) {
         var bookTitles = new ArrayList<>(Arrays.stream(bookName.split(",")).toList());
-        var bookTitleRu = translationService.translateText(bookTitles.get(1),"am","ru");
+        var bookTitleRu = translationService.translateText(bookTitles.get(1),"hy","ru");
         bookTitles.add(bookTitleRu);
 
         return bookTitles.stream().map(title -> {
             var book = new BibleBook();
-            System.out.println(title);
             book.setTitle(title);
+            System.out.println("Book title : " + title);
             return book;
         }).toList();
     }
