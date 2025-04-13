@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    postgres:
+      jdbc-url: jdbc:postgresql://localhost:5432/shavigh_db
+      username: shavigh
+      password: shavigh
+      driver-class-name: org.postgresql.Driver
+    mysql:
+      jdbc-url: jdbc:mysql://localhost:3306/shavigh
+      username: root
+      password: BrXThuQu74
+      driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none

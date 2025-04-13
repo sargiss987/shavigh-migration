@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Migration Wizard</title>
+    <link th:href="@{migration.css}" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div class="container">
+    <h1>Migration Wizard</h1>
+
+    <form th:action="@{/migrate}" method="post">
+        <label for="postURL">Post Name:</label>
+        <input type="text" id="postURL" name="postURL" placeholder="Enter post title" required />
+        <br />
+
+        <label for="bookName">Book Name:</label>
+        <input type="text" id="bookName" name="bookName" placeholder="Enter book name" required />
+        <br />
+
+        <button type="submit">Migrate</button>
+    </form>
+
+    <div th:if="${result != null}">
+        <h2>Migration Result</h2>
+
+        <table>
+            <thead>
+            <tr>
+                <th>Rows Effected</th>
+                <th>Message</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td th:text="${result.rowsEffected}"></td>
+                <td>
+                    <span th:if="${result.errorMessage != null}" th:text="${result.errorMessage}" class="error-message"></span>
+                    <span th:if="${result.errorMessage == null}" th:text="${result.successMessage}" class="success-message"></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+</div>
+</body>
+</html>
+
