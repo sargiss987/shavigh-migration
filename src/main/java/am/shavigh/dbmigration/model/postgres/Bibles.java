@@ -4,7 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
 @Entity
-public class Bible {
+public class Bibles {
 
     @Id
     private Long id;

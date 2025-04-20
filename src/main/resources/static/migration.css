@@ -42,7 +42,8 @@ form {
 }
 
 /* Input and button styling */
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
     width: 100%;
     padding: 10px;
     margin: 10px 0 20px;
@@ -50,6 +51,17 @@ input[type="text"] {
     border-radius: 4px;
     font-size: 16px;
     box-sizing: border-box;
+}
+
+/* Specific field styles */
+#bibleBookId {
+    background-color: #fdf6e3;
+    border-color: #e0b400;
+}
+
+#serialNumber {
+    background-color: #f0f9ff;
+    border-color: #5fa8d3;
 }
 
 /* Button styling */
@@ -131,6 +143,7 @@ tr:hover {
     }
 
     input[type="text"],
+    input[type="number"],
     button[type="submit"] {
         font-size: 14px;
     }

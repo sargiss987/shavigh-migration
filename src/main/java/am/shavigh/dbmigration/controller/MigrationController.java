@@ -29,8 +29,10 @@ public class MigrationController {
     @PostMapping("/migrate")
     public String searchPosts(@RequestParam("postURL") String postURL,
                               @RequestParam("bookName") String bookName,
+                              @RequestParam("serialNumber") int serialNumber,
+                              @RequestParam("bibleBookId") int bibleBookId,
                               Model model) {
-        var result = migrationService.migrate(postURL, bookName);
+        var result = migrationService.migrate(postURL, bookName, serialNumber, bibleBookId);
         model.addAttribute("result", result);
         return "migration";
     }

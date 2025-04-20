@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
-public class BibleBook {
+public class BibleBooks {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,9 +20,9 @@ public class BibleBook {
 
     @ManyToOne
     @JoinColumn(name = "bible_id", nullable = false)
-    private Bible bible;
+    private Bibles bibles;
 
-    @OneToMany(mappedBy = "bibleBook", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "bibleBooks", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BibleBookChapters> bibleBookChapters;
 
     public Long getId() {
@@ -57,12 +57,12 @@ public class BibleBook {
         this.bibleTranslation = bibleTranslation;
     }
 
-    public Bible getBible() {
-        return bible;
+    public Bibles getBible() {
+        return bibles;
     }
 
-    public void setBible(Bible bible) {
-        this.bible = bible;
+    public void setBible(Bibles bibles) {
+        this.bibles = bibles;
     }
 
     public List<BibleBookChapters> getBibleBookChapters() {

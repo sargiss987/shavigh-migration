@@ -1,50 +1,78 @@
 package am.shavigh.dbmigration.service;
 
-import org.jsoup.Jsoup;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 @Service
 public class WebScrapingService {
 
     private static final Logger log = LoggerFactory.getLogger(WebScrapingService.class);
 
-    private final RestTemplate restTemplate;
 
-    public WebScrapingService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
+    public String getBreadcrumbsWithSelenium(String url) {
+        var breadcrumbs = new StringBuilder();
 
-    public String fetchWebpageContent(String url) {
+        var driver = loadPageWithSelenium(url);
+        if (driver == null) return breadcrumbs.toString();
+
         try {
-            var htmlContent = getHtmlContent(url);
-            var document = Jsoup.parse(htmlContent);
+            var breadcrumbElements = driver.findElements(By.cssSelector(
+                    "nav.entry-breadcrumbs span.breadcrumb, nav.entry-breadcrumbs span.breadcrumb-current"
+            ));
 
-            var nextPageLink = document.select("a:containsOwn(Հաջորդը)").first();
-            if (nextPageLink != null) {
-                return nextPageLink.attr("href");
+            for (var element : breadcrumbElements) {
+                breadcrumbs.append(element.getText().trim());
             }
-            return null;
 
         } catch (Exception e) {
-            log.error("An error occurred while fetching or parsing the webpage: " + e.getMessage());
+            log.error("Error extracting breadcrumbs with Selenium: {}", e.getMessage(), e);
+        } finally {
+            driver.quit();
+        }
+
+        return breadcrumbs.toString();
+    }
+
+    public String getNextLinkWithSelenium(String url) {
+        var driver = loadPageWithSelenium(url);
+        if (driver == null) return null;
+
+        try {
+            var nextPageElement = driver.findElement(By.partialLinkText("Հաջորդը"));
+            return nextPageElement.getAttribute("href");
+        } catch (Exception e) {
+            log.error("Error extracting next page link with Selenium: {}", e.getMessage(), e);
             return null;
+        } finally {
+            driver.quit();
         }
     }
 
-    private String getHtmlContent(String url) {
-        var decodedUrl = URLDecoder.decode(url, StandardCharsets.UTF_8);
-        var htmlContent = restTemplate.getForObject(decodedUrl, String.class);
+    private WebDriver loadPageWithSelenium(String url) {
+        try {
+            var decodedUrl = URLDecoder.decode(url, StandardCharsets.UTF_8);
+            var options = new ChromeOptions();
+            options.addArguments("--headless", "--no-sandbox", "--disable-dev-shm-usage");
 
-        if (htmlContent == null) {
-            log.error("html content is null");
-            throw new RuntimeException("html content is null");
+            var driver = new ChromeDriver(options);
+            var wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+            driver.get(decodedUrl);
+
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
+            return driver;
+        } catch (Exception e) {
+            log.error("Failed to load page with Selenium: {}", e.getMessage(), e);
+            return null;
         }
-        return htmlContent;
     }
 }

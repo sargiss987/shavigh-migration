@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class TranslationService {
 
-    // Replace with your project ID
     private static final Logger log = LoggerFactory.getLogger(TranslationService.class);
 
     private final TranslationServiceClient translationServiceClient;

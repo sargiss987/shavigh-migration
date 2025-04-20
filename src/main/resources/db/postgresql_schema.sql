@@ -24,7 +24,9 @@ CREATE TABLE bible_books (
     translation_id INT NOT NULL REFERENCES bible_translations(id),
     bible_id INT NOT NULL REFERENCES bibles(id),
     serial_number INT NOT NULL,
-    title VARCHAR(255) NOT NULL
+    title VARCHAR(255) NOT NULL,
+    oldUniqueName TEXT,
+    url TEXT
 );
 
 -- bible_book_chapters
@@ -38,10 +40,11 @@ CREATE TABLE bible_book_chapters (
 );
 
 -- Insert initial bible translations
-INSERT INTO bible_translations (name) VALUES
-    ('Էջմիածին'),
-    ('Արարատ'),
-    ('Գրաբար'),
-    ('ru');
+INSERT INTO bible_translations (id, name) VALUES
+    (1, 'Էջմիածին'),
+    (2, 'Արարատ'),
+    (3, 'Գրաբար'),
+    (4, 'ru');
 
-insert into bible(name) values ('ՀԻՆ ԿՏԱԿԱՐԱՆ');
+insert into bibles(id, name) values (1,'ՀԻՆ ԿՏԱԿԱՐԱՆ');
+insert into bibles(id, name) values (2, 'ՆՈՐ ԿՏԱԿԱՐԱՆ');

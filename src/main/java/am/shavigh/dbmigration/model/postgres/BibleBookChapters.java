@@ -20,7 +20,7 @@ public class BibleBookChapters {
 
     @ManyToOne
     @JoinColumn(name = "bible_book_id", nullable = false)
-    private BibleBook bibleBook;
+    private BibleBooks bibleBooks;
 
     public Long getId() {
         return id;
@@ -62,11 +62,11 @@ public class BibleBookChapters {
         this.url = url;
     }
 
-    public BibleBook getBibleBook() {
-        return bibleBook;
+    public BibleBooks getBibleBook() {
+        return bibleBooks;
     }
 
-    public void setBibleBook(BibleBook bibleBook) {
-        this.bibleBook = bibleBook;
+    public void setBibleBook(BibleBooks bibleBooks) {
+        this.bibleBooks = bibleBooks;
     }
 }
