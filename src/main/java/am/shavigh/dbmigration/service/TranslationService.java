@@ -30,6 +30,7 @@ public class TranslationService {
                 .setTargetLanguageCode(targetLang)
                 .build();
 
+        log.info("Translating text: {}", text);
         var response = translationServiceClient.translateText(request);
 
         var result =  response.getTranslationsCount() > 0

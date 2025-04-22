@@ -1,6 +1,7 @@
 package am.shavigh.dbmigration.service;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -18,28 +19,40 @@ public class WebScrapingService {
 
     private static final Logger log = LoggerFactory.getLogger(WebScrapingService.class);
 
-
     public String getBreadcrumbsWithSelenium(String url) {
         var breadcrumbs = new StringBuilder();
-
         var driver = loadPageWithSelenium(url);
-        if (driver == null) return breadcrumbs.toString();
+
+        if (driver == null) {
+            log.error("Driver is null, unable to extract breadcrumbs.");
+            return breadcrumbs.toString();
+        }
 
         try {
-            var breadcrumbElements = driver.findElements(By.cssSelector(
-                    "nav.entry-breadcrumbs span.breadcrumb, nav.entry-breadcrumbs span.breadcrumb-current"
-            ));
+            var wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+            var selector = By.cssSelector("nav.entry-breadcrumbs span.breadcrumb, nav.entry-breadcrumbs span.breadcrumb-current");
+
+            wait.until(ExpectedConditions.presenceOfElementLocated(selector));
+
+            var breadcrumbElements = driver.findElements(selector);
+
+            if (breadcrumbElements.isEmpty()) {
+                log.error("No breadcrumb elements found on page: {}", url);
+            }
 
             for (var element : breadcrumbElements) {
                 breadcrumbs.append(element.getText().trim());
             }
 
+        } catch (TimeoutException e) {
+            log.warn("Timed out waiting for breadcrumbs on page: {}", url);
         } catch (Exception e) {
             log.error("Error extracting breadcrumbs with Selenium: {}", e.getMessage(), e);
         } finally {
             driver.quit();
         }
 
+        log.info("Extracted breadcrumbs: {}", breadcrumbs);
         return breadcrumbs.toString();
     }
 
@@ -51,7 +64,7 @@ public class WebScrapingService {
             var nextPageElement = driver.findElement(By.partialLinkText("Հաջորդը"));
             return nextPageElement.getAttribute("href");
         } catch (Exception e) {
-            log.error("Error extracting next page link with Selenium: {}", e.getMessage(), e);
+            log.error("Error extracting next page link with Selenium: {}", e.getMessage());
             return null;
         } finally {
             driver.quit();

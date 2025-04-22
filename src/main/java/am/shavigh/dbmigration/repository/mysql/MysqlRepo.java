@@ -10,6 +10,6 @@ import java.util.List;
 
 public interface MysqlRepo extends JpaRepository<Post, Long> {
 
-    @Query("SELECT p FROM Post p WHERE p.postName = :postName")
+    @Query("SELECT p FROM Post p WHERE p.postName = :postName AND p.postType = 'post' AND p.postStatus = 'publish'")
     List<Post> findByPostName(@Param("postName") String postName);
 }

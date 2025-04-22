@@ -35,7 +35,7 @@ CREATE TABLE bible_book_chapters (
     bible_book_id INT NOT NULL REFERENCES bible_books(id),
     title VARCHAR(50) NOT NULL,
     content TEXT,
-    oldUniqueName TEXT,
+    old_unique_name TEXT,
     url TEXT
 );
 

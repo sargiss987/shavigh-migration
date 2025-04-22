@@ -16,4 +16,4 @@ spring:
 
 app:
   translation:
-    auth-file-path: ${AUTH_FILE_PATH}
+    auth-file-path: tr-api-auth.json #${AUTH_FILE_PATH}
