@@ -36,7 +36,21 @@ CREATE TABLE bible_book_chapters (
     title VARCHAR(50) NOT NULL,
     content TEXT,
     old_unique_name TEXT,
-    url TEXT
+    url TEXT,
+    link_to_default_content TEXT,
+    next_link TEXT,
+    prev_link TEXT
+);
+
+-- bible_book_chapters_pages
+CREATE TABLE bible_book_chapters_pages (
+    id SERIAL PRIMARY KEY,
+    bible_book_chapter_id INT NOT NULL REFERENCES bible_book_chapters(id),
+    content TEXT,
+    old_unique_name TEXT,
+    url TEXT,
+    next_link TEXT,
+    prev_link TEXT
 );
 
 -- Insert initial bible translations

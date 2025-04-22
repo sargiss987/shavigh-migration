@@ -18,6 +18,11 @@ public class BibleBookChapters {
 
     private String url;
 
+    private String linkToDefaultContent;
+
+    private String nextLink;
+    private String prevLink;
+
     @ManyToOne
     @JoinColumn(name = "bible_book_id", nullable = false)
     private BibleBooks bibleBooks;
@@ -67,6 +72,38 @@ public class BibleBookChapters {
     }
 
     public void setBibleBook(BibleBooks bibleBooks) {
+        this.bibleBooks = bibleBooks;
+    }
+
+    public String getLinkToDefaultContent() {
+        return linkToDefaultContent;
+    }
+
+    public void setLinkToDefaultContent(String linkToDefaultContent) {
+        this.linkToDefaultContent = linkToDefaultContent;
+    }
+
+    public BibleBooks getBibleBooks() {
+        return bibleBooks;
+    }
+
+    public String getNextLink() {
+        return nextLink;
+    }
+
+    public void setNextLink(String nextLink) {
+        this.nextLink = nextLink;
+    }
+
+    public String getPrevLink() {
+        return prevLink;
+    }
+
+    public void setPrevLink(String prevLink) {
+        this.prevLink = prevLink;
+    }
+
+    public void setBibleBooks(BibleBooks bibleBooks) {
         this.bibleBooks = bibleBooks;
     }
 }
