@@ -23,7 +23,7 @@ public final class MigrationValidator {
 
         if (postList.isEmpty() && !emptyPostUrlList.contains(postName)) {
             log.info("Post : Empty result {}", postName);
-            throw new RuntimeException("Post : Empty result");
+            throw new RuntimeException("Post : Empty result " + postName);
         }
     }
 

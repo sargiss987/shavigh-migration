@@ -18,8 +18,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,28 +51,70 @@ public class MigrationService {
     @Transactional
     public MigrationResult migrate(String postURL, String bookName, int serialNumber, int bibleBookId) {
         var result = new MigrationResult();
+        MigrationCheckpoint checkpoint = loadCheckpoint();
+        AtomicReference<String> lastProcessedPostUrl = new AtomicReference<>(postURL);
+
+        HashMap<Long, BibleBooks> bibleBooksMap = null;
+        AtomicInteger iterationsCount = new AtomicInteger(0);
+        ArrayList<BibleBookChapters> allChapters = new ArrayList<>();
+
         try {
+            if (checkpoint != null) {
+                // Resume
+                log.info("Resuming migration from checkpoint...");
+                bibleBooksMap = new HashMap<>(checkpoint.getBibleBooksMap());
+                iterationsCount.set(checkpoint.getCurrentIteration());
+                allChapters = new ArrayList<>(checkpoint.getAllChapters());
+                postURL = checkpoint.getLastProcessedPostUrl();
+            } else {
+                // Start from scratch
+                log.info("Starting new migration...");
+                bibleBooksMap = createAndSaveBooks(bookName, serialNumber, bibleBookId);
+                allChapters = new ArrayList<>();
+            }
 
-            // create and save books
-            var bibleBooksMap = createAndSaveBooks(bookName, serialNumber, bibleBookId);
-
-            // recursively create and save book's chapters
-            var iterationsCount = 0;
-            var allChapters = new ArrayList<BibleBookChapters>();
-            createBookChapters(bibleBooksMap, postURL, result, iterationsCount, allChapters);
+            createBookChapters(bibleBooksMap, postURL, result, iterationsCount, allChapters, lastProcessedPostUrl);
             setPrevAndNextLinks(allChapters);
             bibleBookChaptersRepo.saveAll(allChapters);
+
+            // Migration successful, delete checkpoint
+            boolean isDeleted = new File("migration_checkpoint.ser").delete();
+            log.info("Checkpoint deleted: {}", isDeleted);
 
             result.setSuccessMessage("Migration successful, " + iterationsCount + " iterations");
             return result;
 
         } catch (Exception ex) {
-            log.error("Migration failed : {}", ex.getMessage(), ex);
-            result.setErrorMessage("Migration failed : " + ex.getMessage());
+            log.error("Migration failed: {}", ex.getMessage(), ex);
+            result.setErrorMessage("Migration failed: " + ex.getMessage());
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+
+            // Save checkpoint even on failure
+            if (bibleBooksMap != null) {
+                saveCheckpoint(new MigrationCheckpoint(postURL, iterationsCount.get(), allChapters, bibleBooksMap, true, lastProcessedPostUrl.get()));
+            }
             return result;
         }
     }
+
+
+    private void saveCheckpoint(MigrationCheckpoint checkpoint) {
+        try (var oos = new ObjectOutputStream(new FileOutputStream("migration_checkpoint.ser"))) {
+            oos.writeObject(checkpoint);
+        } catch (IOException e) {
+            log.error("Failed to save migration checkpoint", e);
+        }
+    }
+
+    private MigrationCheckpoint loadCheckpoint() {
+        try (var ois = new ObjectInputStream(new FileInputStream("migration_checkpoint.ser"))) {
+            return (MigrationCheckpoint) ois.readObject();
+        } catch (Exception e) {
+            log.info("No checkpoint found or failed to load: {}", e.getMessage());
+            return null;
+        }
+    }
+
 
     private HashMap<Long, BibleBooks> createAndSaveBooks(String bookName, int serialNumber, int bibleBookId) {
         var bookTitles = new ArrayList<>(Arrays.stream(bookName.split(",")).toList());
@@ -100,7 +144,8 @@ public class MigrationService {
         return bibleBooksMap;
     }
 
-    private void createBookChapters(HashMap<Long, BibleBooks> bibleBooksMap, String postURL, MigrationResult result, int iterationsCount, List<BibleBookChapters> allChapters) {
+    private void createBookChapters(HashMap<Long, BibleBooks> bibleBooksMap, String postURL, MigrationResult result, AtomicInteger iterationsCount, List<BibleBookChapters> allChapters, AtomicReference<String> lastProcessedPostUrl) {
+        lastProcessedPostUrl.set(postURL);
         var postName = URLUtil.extractSegmentBetweenLastTwoSlashes(postURL);
         postName = MigrationValidator.validatePostName(postName, result);
 
@@ -119,19 +164,19 @@ public class MigrationService {
 
         var bookChapters = migrateBibleBookChapters(bibleBooksMap, postList.getFirst(), url, urlArmenian, iterationsCount, result);
         allChapters.addAll(bookChapters);
-        iterationsCount++;
+        iterationsCount.incrementAndGet();
 
         var nextLink = webScrapingService.getNextLinkWithSelenium(postURL);
         if (nextLink != null && !nextLink.isBlank()) {
-            createBookChapters(bibleBooksMap, nextLink, result, iterationsCount, allChapters);
+            createBookChapters(bibleBooksMap, nextLink, result, iterationsCount, allChapters, lastProcessedPostUrl);
         }
 
     }
 
-    private List<BibleBookChapters> migrateBibleBookChapters(HashMap<Long, BibleBooks> bibleBooksMap, Post post, String url, String urlArmenian, int iterationsCount, MigrationResult result) {
+    private List<BibleBookChapters> migrateBibleBookChapters(HashMap<Long, BibleBooks> bibleBooksMap, Post post, String url, String urlArmenian, AtomicInteger iterationsCount, MigrationResult result) {
         var content = post.getPostContent();
         var bookChaptersContents = splitByLanguageSections(content);
-        String title = post.getPostTitle().contains("Ներածութիւն") ? "Ներածութիւն" : String.valueOf(iterationsCount);
+        String title = post.getPostTitle().contains("Ներածութիւն") ? "Ներածութիւն" : String.valueOf(iterationsCount.get());
 
         String baseTranslation = "Echmiadzin Translation";
         var urlMap = Map.of(
@@ -160,45 +205,57 @@ public class MigrationService {
                 var nameToUrlMap = new HashMap<String, String>();
                 //create pages
                 var urls = URLUtil.extractUrlsFromContent(content);
-                var bibleBookChapterPagesList = urls.stream().map(u -> {
-                    if (u.startsWith("/")) {
-                        u = "http://" + url.substring(1);
-                    }
-                    var originalName = URLUtil.extractSegmentBetweenLastTwoSlashes(u);
-                    var name = MigrationValidator.validatePostName(originalName, result);
-                    if (MigrationValidator.emptyPostUrlList.contains(name)){
-                        nameToUrlMap.put(originalName, "/404");
-                        return new BibleBookChapterPages();
-                    }
-                    var page = mysqlRepo.findPageByPostName(name);
-                    MigrationValidator.validatePost(page, name);
-                    var uniquePage = page.getFirst();
+                var bibleBookChapterPagesList = urls.stream()
+                        .map(u -> {
+                            if (u.startsWith("/")) {
+                                log.info("http:// missing = {}", u);
+                                u = "http://" + u.substring(1);
+                                log.info("modified url = {}", u);
+                            }
+                            var originalName = URLUtil.extractSegmentBetweenLastTwoSlashes(u);
+                            var name = MigrationValidator.validatePostName(originalName, result);
 
-                    var breadcrumbs = webScrapingService.getBreadcrumbsWithSelenium(u);
-                    var pageUrl = translationService.translateText(breadcrumbs, "hy", "en")
-                            .replaceFirst("^Home", "bible")
-                            .toLowerCase()
-                            .replaceAll("\\s+", "")
-                            .trim();
-                    var pageUrlArmenian = breadcrumbs.toLowerCase().replaceAll("\\s+", "")
-                            .trim();
-                    var pageContent = extractSection(uniquePage.getPostContent());
+                            var bibleBookChapterPage = new BibleBookChapterPages();
+                            bibleBookChapterPage.setBibleBookChapters(bibleBookChapter); // ✅ Always set parent chapter!
 
-                    nameToUrlMap.put(originalName, pageUrl);
+                            if (MigrationValidator.emptyPostUrlList.contains(name)) {
+                                nameToUrlMap.put(originalName, "/404");
+                                bibleBookChapterPage.setTitle("404 - Page Not Found");
+                                bibleBookChapterPage.setContent("This page is not available.");
+                                bibleBookChapterPage.setUrl("/404");
+                                bibleBookChapterPage.setUrlArmenian("/404");
+                                bibleBookChapterPage.setOldUniqueName(name);
+                                return bibleBookChapterPage;
+                            }
 
-                    var bibleBookChapterPage = new BibleBookChapterPages();
-                    bibleBookChapterPage.setTitle(extractSection(uniquePage.getPostTitle()));
-                    bibleBookChapterPage.setContent(pageContent);
-                    bibleBookChapterPage.setBibleBookChapters(bibleBookChapter);
-                    bibleBookChapterPage.setUrl(pageUrl);
-                    bibleBookChapterPage.setContent(uniquePage.getPostContent());
-                    bibleBookChapterPage.setUrlArmenian(pageUrlArmenian);
-                    bibleBookChapterPage.setOldUniqueName(name);
-                    if (content.contains("<a")) {
-                        bibleBookChapterPage.setHasNestedLinks(true);
-                    }
-                    return bibleBookChapterPage;
-                }).toList();
+                            var page = mysqlRepo.findPageByPostName(name);
+                            MigrationValidator.validatePost(page, name);
+                            var uniquePage = page.getFirst();
+
+                            var breadcrumbs = webScrapingService.getBreadcrumbsWithSelenium(u);
+                            var pageUrl = translationService.translateText(breadcrumbs, "hy", "en")
+                                    .replaceFirst("^Home", "bible")
+                                    .toLowerCase()
+                                    .replaceAll("\\s+", "")
+                                    .trim();
+                            var pageUrlArmenian = breadcrumbs.toLowerCase().replaceAll("\\s+", "").trim();
+                            var pageContent = extractSection(uniquePage.getPostContent());
+
+                            nameToUrlMap.put(originalName, pageUrl);
+
+                            bibleBookChapterPage.setTitle(extractSection(uniquePage.getPostTitle()));
+                            bibleBookChapterPage.setContent(pageContent);
+                            bibleBookChapterPage.setUrl(pageUrl);
+                            bibleBookChapterPage.setUrlArmenian(pageUrlArmenian);
+                            bibleBookChapterPage.setOldUniqueName(name);
+
+                            if (content.contains("<a")) {
+                                bibleBookChapterPage.setHasNestedLinks(true);
+                            }
+
+                            return bibleBookChapterPage;
+                        })
+                        .toList();
 
                 // modify content a tag links
                 String updatedContent = rewriteChapterContentLinks(content, nameToUrlMap);

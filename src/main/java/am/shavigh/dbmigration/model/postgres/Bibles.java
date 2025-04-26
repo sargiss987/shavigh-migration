@@ -3,8 +3,10 @@ package am.shavigh.dbmigration.model.postgres;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
+import java.io.Serializable;
+
 @Entity
-public class Bibles {
+public class Bibles implements Serializable {
 
     @Id
     private Long id;

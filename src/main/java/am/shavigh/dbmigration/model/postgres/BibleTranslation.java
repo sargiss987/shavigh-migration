@@ -4,9 +4,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "bible_translations")
-public class BibleTranslation {
+public class BibleTranslation implements Serializable {
 
     @Id
     private Long id;

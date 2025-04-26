@@ -2,8 +2,10 @@ package am.shavigh.dbmigration.model.postgres;
 
 import jakarta.persistence.*;
 
+import java.io.Serializable;
+
 @Entity
-public class BibleBookChapterPages {
+public class BibleBookChapterPages implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
