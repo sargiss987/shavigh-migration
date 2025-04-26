@@ -37,20 +37,25 @@ CREATE TABLE bible_book_chapters (
     content TEXT,
     old_unique_name TEXT,
     url TEXT,
+    url_armenian TEXT,
     link_to_default_content TEXT,
     next_link TEXT,
-    prev_link TEXT
+    prev_link TEXT,
+    unexpected_link BOOLEAN
 );
 
 -- bible_book_chapters_pages
-CREATE TABLE bible_book_chapters_pages (
+CREATE TABLE bible_book_chapter_pages (
     id SERIAL PRIMARY KEY,
     bible_book_chapter_id INT NOT NULL REFERENCES bible_book_chapters(id),
+    title VARCHAR(300) NOT NULL,
     content TEXT,
     old_unique_name TEXT,
     url TEXT,
+    url_armenian TEXT,
     next_link TEXT,
-    prev_link TEXT
+    prev_link TEXT,
+    has_nested_links BOOLEAN DEFAULT FALSE
 );
 
 -- Insert initial bible translations

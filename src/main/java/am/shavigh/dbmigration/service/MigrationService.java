@@ -2,6 +2,7 @@ package am.shavigh.dbmigration.service;
 
 import am.shavigh.dbmigration.dto.MigrationResult;
 import am.shavigh.dbmigration.model.mysql.Post;
+import am.shavigh.dbmigration.model.postgres.BibleBookChapterPages;
 import am.shavigh.dbmigration.model.postgres.BibleBookChapters;
 import am.shavigh.dbmigration.model.postgres.BibleBooks;
 import am.shavigh.dbmigration.repository.mysql.MysqlRepo;
@@ -19,6 +20,8 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,7 +57,7 @@ public class MigrationService {
             // recursively create and save book's chapters
             var iterationsCount = 0;
             var allChapters = new ArrayList<BibleBookChapters>();
-            createAndSaveBookChapters(bibleBooksMap, postURL, result, iterationsCount, allChapters);
+            createBookChapters(bibleBooksMap, postURL, result, iterationsCount, allChapters);
             setPrevAndNextLinks(allChapters);
             bibleBookChaptersRepo.saveAll(allChapters);
 
@@ -97,27 +100,35 @@ public class MigrationService {
         return bibleBooksMap;
     }
 
-    private void createAndSaveBookChapters(HashMap<Long, BibleBooks> bibleBooksMap, String postURL, MigrationResult result, int iterationsCount, List<BibleBookChapters> allChapters) {
+    private void createBookChapters(HashMap<Long, BibleBooks> bibleBooksMap, String postURL, MigrationResult result, int iterationsCount, List<BibleBookChapters> allChapters) {
         var postName = URLUtil.extractSegmentBetweenLastTwoSlashes(postURL);
-        MigrationValidator.validatePostName(postName, result);
+        postName = MigrationValidator.validatePostName(postName, result);
 
         var postList = mysqlRepo.findByPostName(postName);
-        MigrationValidator.validatePost(postList);
+        MigrationValidator.validatePost(postList, postName);
 
         var breadcrumbs = webScrapingService.getBreadcrumbsWithSelenium(postURL);
-        var url = translationService.translateText(breadcrumbs, "hy", "en");
-        var bookChapters = migrateBibleBookChapters(bibleBooksMap, postList.getFirst(), url, iterationsCount);
+        var url = translationService.translateText(breadcrumbs, "hy", "en")
+                .replaceFirst("^Home", "bible")
+                .toLowerCase()
+                .replaceAll("\\s+", "")
+                .trim();
+        var urlArmenian = breadcrumbs.toLowerCase()
+                .replaceAll("\\s+", "")
+                .trim();
+
+        var bookChapters = migrateBibleBookChapters(bibleBooksMap, postList.getFirst(), url, urlArmenian, iterationsCount, result);
         allChapters.addAll(bookChapters);
         iterationsCount++;
 
         var nextLink = webScrapingService.getNextLinkWithSelenium(postURL);
         if (nextLink != null && !nextLink.isBlank()) {
-            createAndSaveBookChapters(bibleBooksMap, nextLink, result, iterationsCount, allChapters);
+            createBookChapters(bibleBooksMap, nextLink, result, iterationsCount, allChapters);
         }
 
     }
 
-    private List<BibleBookChapters> migrateBibleBookChapters(HashMap<Long, BibleBooks> bibleBooksMap, Post post, String url, int iterationsCount) {
+    private List<BibleBookChapters> migrateBibleBookChapters(HashMap<Long, BibleBooks> bibleBooksMap, Post post, String url, String urlArmenian, int iterationsCount, MigrationResult result) {
         var content = post.getPostContent();
         var bookChaptersContents = splitByLanguageSections(content);
         String title = post.getPostTitle().contains("Ներածութիւն") ? "Ներածութիւն" : String.valueOf(iterationsCount);
@@ -138,6 +149,7 @@ public class MigrationService {
             bibleBookChapter.setBibleBook(bibleBooksMap.get(languageId));
             bibleBookChapter.setUrl(urlMap.get(languageId));
             bibleBookChapter.setTitle(title);
+            bibleBookChapter.setUrlArmenian(urlArmenian);
 
             if (title.equals("Ներածութիւն") && languageId != 1L) {
                 bibleBookChapter.setLinkToDefaultContent(urlMap.get(1L));
@@ -145,17 +157,68 @@ public class MigrationService {
 
             if (languageId == 1L) {
                 bibleBookChapter.setOldUniqueName(post.getPostName());
-                //create subchapters
+                var nameToUrlMap = new HashMap<String, String>();
+                //create pages
+                var urls = URLUtil.extractUrlsFromContent(content);
+                var bibleBookChapterPagesList = urls.stream().map(u -> {
+                    if (u.startsWith("/")) {
+                        u = "http://" + url.substring(1);
+                    }
+                    var originalName = URLUtil.extractSegmentBetweenLastTwoSlashes(u);
+                    var name = MigrationValidator.validatePostName(originalName, result);
+                    if (MigrationValidator.emptyPostUrlList.contains(name)){
+                        nameToUrlMap.put(originalName, "/404");
+                        return new BibleBookChapterPages();
+                    }
+                    var page = mysqlRepo.findPageByPostName(name);
+                    MigrationValidator.validatePost(page, name);
+                    var uniquePage = page.getFirst();
+
+                    var breadcrumbs = webScrapingService.getBreadcrumbsWithSelenium(u);
+                    var pageUrl = translationService.translateText(breadcrumbs, "hy", "en")
+                            .replaceFirst("^Home", "bible")
+                            .toLowerCase()
+                            .replaceAll("\\s+", "")
+                            .trim();
+                    var pageUrlArmenian = breadcrumbs.toLowerCase().replaceAll("\\s+", "")
+                            .trim();
+                    var pageContent = extractSection(uniquePage.getPostContent());
+
+                    nameToUrlMap.put(originalName, pageUrl);
+
+                    var bibleBookChapterPage = new BibleBookChapterPages();
+                    bibleBookChapterPage.setTitle(extractSection(uniquePage.getPostTitle()));
+                    bibleBookChapterPage.setContent(pageContent);
+                    bibleBookChapterPage.setBibleBookChapters(bibleBookChapter);
+                    bibleBookChapterPage.setUrl(pageUrl);
+                    bibleBookChapterPage.setContent(uniquePage.getPostContent());
+                    bibleBookChapterPage.setUrlArmenian(pageUrlArmenian);
+                    bibleBookChapterPage.setOldUniqueName(name);
+                    if (content.contains("<a")) {
+                        bibleBookChapterPage.setHasNestedLinks(true);
+                    }
+                    return bibleBookChapterPage;
+                }).toList();
 
                 // modify content a tag links
+                String updatedContent = rewriteChapterContentLinks(content, nameToUrlMap);
+                bibleBookChapter.setContent(updatedContent);
+                bibleBookChapter.setBibleBookChapterPages(bibleBookChapterPagesList);
+
+                // set next and prev links for pages
+                setPrevAndNextLinksToPages(bibleBookChapterPagesList);
+
             } else {
+                if (chapterContent.contains("<a")) {
+                    bibleBookChapter.setUnexpectedLink(true);
+                }
                 bibleBookChapter.setContent(chapterContent);
             }
 
             bibleBookChaptersList.add(bibleBookChapter);
         }
 
-        return  bibleBookChaptersList;
+        return bibleBookChaptersList;
     }
 
     public static Map<Long, String> splitByLanguageSections(String content) {
@@ -240,5 +303,55 @@ public class MigrationService {
                 }
             }
         }
+    }
+
+    public static String extractSection(String content) {
+        String startTag = "[:en]";
+        String endTag = "[:]";
+
+        int startIdx = content.indexOf(startTag);
+        int endIdx = content.indexOf(endTag, startIdx + startTag.length());
+
+        if (startIdx == -1 || endIdx == -1 || endIdx <= startIdx) {
+            throw new RuntimeException("Invalid format for Edjmiatsin section - content :" + content);
+        }
+
+        return content.substring(startIdx + startTag.length(), endIdx).trim();
+    }
+
+    public static void setPrevAndNextLinksToPages(List<BibleBookChapterPages> pages) {
+        for (int i = 0; i < pages.size(); i++) {
+            BibleBookChapterPages current = pages.get(i);
+
+            if (i > 0) {
+                current.setPrevLink(pages.get(i - 1).getUrl());
+            }
+
+            if (i < pages.size() - 1) {
+                current.setNextLink(pages.get(i + 1).getUrl());
+            }
+        }
+    }
+
+    public static String rewriteChapterContentLinks(String content, Map<String, String> nameToNewUrlMap) {
+        var pattern = Pattern.compile("<a\\s+href=\"(.*?)\"");
+        var matcher = pattern.matcher(content);
+        var updatedContent = new StringBuilder();
+
+        while (matcher.find()) {
+            String oldUrl = matcher.group(1);
+            String name = URLUtil.extractSegmentBetweenLastTwoSlashes(oldUrl);
+            String newUrl = nameToNewUrlMap.get(name);
+            if (newUrl == null) {
+                throw new RuntimeException("URL not found in map: (pageUrl->oldUrl) " + oldUrl);
+            }
+
+            // Replace only href value
+            String updatedTag = matcher.group(0).replace(oldUrl, newUrl);
+            matcher.appendReplacement(updatedContent, Matcher.quoteReplacement(updatedTag));
+        }
+
+        matcher.appendTail(updatedContent);
+        return updatedContent.toString();
     }
 }

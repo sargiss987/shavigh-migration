@@ -29,7 +29,7 @@ public class WebScrapingService {
         }
 
         try {
-            var wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+            var wait = new WebDriverWait(driver, Duration.ofSeconds(30));
             var selector = By.cssSelector("nav.entry-breadcrumbs span.breadcrumb, nav.entry-breadcrumbs span.breadcrumb-current");
 
             wait.until(ExpectedConditions.presenceOfElementLocated(selector));

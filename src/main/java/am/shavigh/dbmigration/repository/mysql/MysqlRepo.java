@@ -12,4 +12,7 @@ public interface MysqlRepo extends JpaRepository<Post, Long> {
 
     @Query("SELECT p FROM Post p WHERE p.postName = :postName AND p.postType = 'post' AND p.postStatus = 'publish'")
     List<Post> findByPostName(@Param("postName") String postName);
+
+    @Query("SELECT p FROM Post p WHERE p.postName = :postName AND p.postType = 'page' AND p.postStatus = 'publish'")
+    List<Post> findPageByPostName(@Param("postName") String postName);
 }

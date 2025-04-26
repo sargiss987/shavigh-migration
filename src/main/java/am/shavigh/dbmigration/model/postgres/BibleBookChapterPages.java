@@ -2,39 +2,20 @@ package am.shavigh.dbmigration.model.postgres;
 
 import jakarta.persistence.*;
 
-import java.util.List;
-
 @Entity
-public class BibleBookChapters {
+public class BibleBookChapterPages {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String title;
-
     private String content;
-
-    // TO:DO supposed to be removed
     private String oldUniqueName;
-
     private String url;
     private String urlArmenian;
-
-    private String linkToDefaultContent;
-
     private String nextLink;
     private String prevLink;
-
-    private boolean unexpectedLink;
-
-    public boolean isUnexpectedLink() {
-        return unexpectedLink;
-    }
-
-    public void setUnexpectedLink(boolean unexpectedLink) {
-        this.unexpectedLink = unexpectedLink;
-    }
+    private boolean hasNestedLinks;
 
     public String getUrlArmenian() {
         return urlArmenian;
@@ -44,20 +25,9 @@ public class BibleBookChapters {
         this.urlArmenian = urlArmenian;
     }
 
-    public List<BibleBookChapterPages> getBibleBookChapterPages() {
-        return bibleBookChapterPages;
-    }
-
-    public void setBibleBookChapterPages(List<BibleBookChapterPages> bibleBookChapterPages) {
-        this.bibleBookChapterPages = bibleBookChapterPages;
-    }
-
     @ManyToOne
-    @JoinColumn(name = "bible_book_id", nullable = false)
-    private BibleBooks bibleBooks;
-
-    @OneToMany(mappedBy = "bibleBookChapters", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BibleBookChapterPages> bibleBookChapterPages;
+    @JoinColumn(name = "bible_book_chapter_id", nullable = false)
+    private BibleBookChapters bibleBookChapters;
 
     public Long getId() {
         return id;
@@ -99,25 +69,6 @@ public class BibleBookChapters {
         this.url = url;
     }
 
-    public BibleBooks getBibleBook() {
-        return bibleBooks;
-    }
-
-    public void setBibleBook(BibleBooks bibleBooks) {
-        this.bibleBooks = bibleBooks;
-    }
-
-    public String getLinkToDefaultContent() {
-        return linkToDefaultContent;
-    }
-
-    public void setLinkToDefaultContent(String linkToDefaultContent) {
-        this.linkToDefaultContent = linkToDefaultContent;
-    }
-
-    public BibleBooks getBibleBooks() {
-        return bibleBooks;
-    }
 
     public String getNextLink() {
         return nextLink;
@@ -135,7 +86,19 @@ public class BibleBookChapters {
         this.prevLink = prevLink;
     }
 
-    public void setBibleBooks(BibleBooks bibleBooks) {
-        this.bibleBooks = bibleBooks;
+    public BibleBookChapters getBibleBookChapters() {
+        return bibleBookChapters;
+    }
+
+    public void setBibleBookChapters(BibleBookChapters bibleBookChapters) {
+        this.bibleBookChapters = bibleBookChapters;
+    }
+
+    public boolean isHasNestedLinks() {
+        return hasNestedLinks;
+    }
+
+    public void setHasNestedLinks(boolean hasNestedLinks) {
+        this.hasNestedLinks = hasNestedLinks;
     }
 }
