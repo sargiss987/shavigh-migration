@@ -76,3 +76,24 @@ ALTER COLUMN url TYPE VARCHAR(500);
 
 ALTER TABLE bible_book_chapter_pages
 ALTER COLUMN url_armenian TYPE VARCHAR(500);
+
+UPDATE bible_book_chapters bc
+SET url = REPLACE(bc.url, 'bible/echmiadzintranslation/', 'bible/ararattranslation/')
+FROM bible_books bb
+WHERE bc.bible_book_id = bb.id
+  AND bb.translation_id = 2
+  AND bc.url LIKE 'bible/echmiadzintranslation/%'
+
+UPDATE bible_book_chapters bc
+SET url = REPLACE(bc.url, 'bible/echmiadzintranslation/', 'bible/grabartranslation/')
+FROM bible_books bb
+WHERE bc.bible_book_id = bb.id
+  AND bb.translation_id = 3
+  AND bc.url LIKE 'bible/echmiadzintranslation/%';
+
+UPDATE bible_book_chapters bc
+SET url = REPLACE(bc.url, 'bible/echmiadzintranslation/', 'bible/russiantranslation/')
+FROM bible_books bb
+WHERE bc.bible_book_id = bb.id
+  AND bb.translation_id = 4
+  AND bc.url LIKE 'bible/echmiadzintranslation/%';
