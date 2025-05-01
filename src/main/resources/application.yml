@@ -17,3 +17,6 @@ spring:
 app:
   translation:
     auth-file-path: tr-api-auth.json #${AUTH_FILE_PATH}
+
+server:
+  port: 8081

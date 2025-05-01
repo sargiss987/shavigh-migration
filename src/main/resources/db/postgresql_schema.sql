@@ -77,13 +77,34 @@ ALTER COLUMN url TYPE VARCHAR(500);
 ALTER TABLE bible_book_chapter_pages
 ALTER COLUMN url_armenian TYPE VARCHAR(500);
 
+-- for bible_book_chapters translation_id = 2
+-- Update `url`
 UPDATE bible_book_chapters bc
 SET url = REPLACE(bc.url, 'bible/echmiadzintranslation/', 'bible/ararattranslation/')
 FROM bible_books bb
 WHERE bc.bible_book_id = bb.id
   AND bb.translation_id = 2
-  AND bc.url LIKE 'bible/echmiadzintranslation/%'
+  AND bc.url LIKE 'bible/echmiadzintranslation/%';
 
+-- Update `prev_link`
+UPDATE bible_book_chapters bc
+SET prev_link = REPLACE(bc.prev_link, 'bible/echmiadzintranslation/', 'bible/ararattranslation/')
+FROM bible_books bb
+WHERE bc.bible_book_id = bb.id
+  AND bb.translation_id = 2
+  AND bc.prev_link LIKE 'bible/echmiadzintranslation/%';
+
+-- Update `next_link`
+UPDATE bible_book_chapters bc
+SET next_link = REPLACE(bc.next_link, 'bible/echmiadzintranslation/', 'bible/ararattranslation/')
+FROM bible_books bb
+WHERE bc.bible_book_id = bb.id
+  AND bb.translation_id = 2
+  AND bc.next_link LIKE 'bible/echmiadzintranslation/%';
+
+
+-- for bible_book_chapters translation_id = 3
+-- url
 UPDATE bible_book_chapters bc
 SET url = REPLACE(bc.url, 'bible/echmiadzintranslation/', 'bible/grabartranslation/')
 FROM bible_books bb
@@ -91,9 +112,46 @@ WHERE bc.bible_book_id = bb.id
   AND bb.translation_id = 3
   AND bc.url LIKE 'bible/echmiadzintranslation/%';
 
+-- prev_link
+UPDATE bible_book_chapters bc
+SET prev_link = REPLACE(bc.prev_link, 'bible/echmiadzintranslation/', 'bible/grabartranslation/')
+FROM bible_books bb
+WHERE bc.bible_book_id = bb.id
+  AND bb.translation_id = 3
+  AND bc.prev_link LIKE 'bible/echmiadzintranslation/%';
+
+-- next_link
+UPDATE bible_book_chapters bc
+SET next_link = REPLACE(bc.next_link, 'bible/echmiadzintranslation/', 'bible/grabartranslation/')
+FROM bible_books bb
+WHERE bc.bible_book_id = bb.id
+  AND bb.translation_id = 3
+  AND bc.next_link LIKE 'bible/echmiadzintranslation/%';
+
+-- for bible_book_chapters translation_id = 4
+-- url
 UPDATE bible_book_chapters bc
 SET url = REPLACE(bc.url, 'bible/echmiadzintranslation/', 'bible/russiantranslation/')
 FROM bible_books bb
 WHERE bc.bible_book_id = bb.id
   AND bb.translation_id = 4
   AND bc.url LIKE 'bible/echmiadzintranslation/%';
+
+-- prev_link
+UPDATE bible_book_chapters bc
+SET prev_link = REPLACE(bc.prev_link, 'bible/echmiadzintranslation/', 'bible/russiantranslation/')
+FROM bible_books bb
+WHERE bc.bible_book_id = bb.id
+  AND bb.translation_id = 4
+  AND bc.prev_link LIKE 'bible/echmiadzintranslation/%';
+
+-- next_link
+UPDATE bible_book_chapters bc
+SET next_link = REPLACE(bc.next_link, 'bible/echmiadzintranslation/', 'bible/russiantranslation/')
+FROM bible_books bb
+WHERE bc.bible_book_id = bb.id
+  AND bb.translation_id = 4
+  AND bc.next_link LIKE 'bible/echmiadzintranslation/%';
+
+
+
