@@ -25,6 +25,9 @@ public class CleaningService {
             if (chapter.getNextLink() != null) {
                 chapter.setNextLink(cleanUrl(chapter.getNextLink()));
             }
+            if (chapter.getLinkToDefaultContent() != null) {
+                chapter.setLinkToDefaultContent(cleanUrl(chapter.getLinkToDefaultContent()));
+            }
         });
 
         bibleBookChaptersRepo.saveAll(chapters);

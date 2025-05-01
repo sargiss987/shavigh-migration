@@ -13,6 +13,8 @@ public class Bibles implements Serializable {
 
     private String name;
 
+    private String uniqueName;
+
     public Long getId() {
         return id;
     }
@@ -27,5 +29,13 @@ public class Bibles implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getUniqueName() {
+        return uniqueName;
+    }
+
+    public void setUniqueName(String uniqueName) {
+        this.uniqueName = uniqueName;
     }
 }

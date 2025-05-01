@@ -20,3 +20,6 @@ app:
 
 server:
   port: 8081
+
+# useful commands
+# psql -h 127.0.0.1 -U shavigh -d shavigh_db < ./init.sql

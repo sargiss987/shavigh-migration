@@ -68,6 +68,20 @@ INSERT INTO bible_translations (id, name) VALUES
 insert into bibles(id, name) values (1,'ՀԻՆ ԿՏԱԿԱՐԱՆ');
 insert into bibles(id, name) values (2, 'ՆՈՐ ԿՏԱԿԱՐԱՆ');
 
+ALTER TABLE bibles
+ADD COLUMN unique_name VARCHAR(255);
+
+ALTER TABLE bibles
+ADD CONSTRAINT unique_name_unique UNIQUE (unique_name);
+
+UPDATE bibles
+SET unique_name = 'oldTestament'
+WHERE id = 1;
+
+UPDATE bibles
+SET unique_name = 'newTestament'
+WHERE id = 2;
+
 ALTER TABLE bible_book_chapter_pages
 ALTER COLUMN title TYPE VARCHAR(500);
 
