@@ -204,7 +204,7 @@ public class MigrationService {
                 bibleBookChapter.setOldUniqueName(post.getPostName());
                 var nameToUrlMap = new HashMap<String, String>();
                 //create pages
-                var urls = URLUtil.extractUrlsFromContent(content);
+                var urls = URLUtil.extractUrlsFromContent(chapterContent);
                 var bibleBookChapterPagesList = urls.stream()
                         .map(u -> {
                             if (u.startsWith("/")) {
@@ -239,17 +239,33 @@ public class MigrationService {
                                     .replaceAll("\\s+", "")
                                     .trim();
                             var pageUrlArmenian = breadcrumbs.toLowerCase().replaceAll("\\s+", "").trim();
-                            var pageContent = extractSection(uniquePage.getPostContent());
+                            var pgContent = uniquePage.getPostContent();
+                            if (!pgContent.startsWith("[:en]")) {
+                                pgContent = "[:en]" + pgContent;
+                            }
+                            if (!pgContent.endsWith("[:]")) {
+                                pgContent = pgContent + "[:]";
+                            }
+                            var pageContent = extractSection(pgContent);
 
                             nameToUrlMap.put(originalName, pageUrl);
 
-                            bibleBookChapterPage.setTitle(extractSection(uniquePage.getPostTitle()));
+                            var pageTitle = uniquePage.getPostTitle();
+                            if (!pageTitle.startsWith("[:en]")) {
+                                pageTitle = "[:en]" + pageTitle;
+                            }
+                            if (!pageTitle.endsWith("[:]")) {
+                                pageTitle = pageTitle + "[:]";
+                            }
+                            bibleBookChapterPage.setTitle(extractSection(pageTitle));
                             bibleBookChapterPage.setContent(pageContent);
                             bibleBookChapterPage.setUrl(pageUrl);
                             bibleBookChapterPage.setUrlArmenian(pageUrlArmenian);
                             bibleBookChapterPage.setOldUniqueName(name);
 
-                            if (content.contains("<a")) {
+                            var pattern = Pattern.compile("<a\\s+[^>]*href\\s*=\\s*\"http", Pattern.CASE_INSENSITIVE);
+                            var matcher = pattern.matcher(pageContent);
+                            if (matcher.find()) {
                                 bibleBookChapterPage.setHasNestedLinks(true);
                             }
 
@@ -258,7 +274,7 @@ public class MigrationService {
                         .toList();
 
                 // modify content a tag links
-                String updatedContent = rewriteChapterContentLinks(content, nameToUrlMap);
+                String updatedContent = rewriteChapterContentLinks(chapterContent, nameToUrlMap);
                 bibleBookChapter.setContent(updatedContent);
                 bibleBookChapter.setBibleBookChapterPages(bibleBookChapterPagesList);
 
@@ -363,11 +379,25 @@ public class MigrationService {
     }
 
     public static String extractSection(String content) {
+        //log.info("extractSection content: {}", content);
         String startTag = "[:en]";
         String endTag = "[:]";
 
         int startIdx = content.indexOf(startTag);
         int endIdx = content.indexOf(endTag, startIdx + startTag.length());
+
+//        if (startIdx == -1) {
+//            log.info("Start tag not found in content: {}", content);
+//        }
+//
+//        if (endIdx == -1) {
+//            log.info("End tag not found in content: {}", content);
+//        }
+
+        if (endIdx <= startIdx) {
+            log.info("startIdx: {}, endIdx: {}", startIdx, endIdx);
+            log.info("End tag is before or at the same position as start tag in content: {}", content);
+        }
 
         if (startIdx == -1 || endIdx == -1 || endIdx <= startIdx) {
             throw new RuntimeException("Invalid format for Edjmiatsin section - content :" + content);

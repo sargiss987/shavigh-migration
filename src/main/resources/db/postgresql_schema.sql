@@ -67,3 +67,12 @@ INSERT INTO bible_translations (id, name) VALUES
 
 insert into bibles(id, name) values (1,'ՀԻՆ ԿՏԱԿԱՐԱՆ');
 insert into bibles(id, name) values (2, 'ՆՈՐ ԿՏԱԿԱՐԱՆ');
+
+ALTER TABLE bible_book_chapter_pages
+ALTER COLUMN title TYPE VARCHAR(500);
+
+ALTER TABLE bible_book_chapter_pages
+ALTER COLUMN url TYPE VARCHAR(500);
+
+ALTER TABLE bible_book_chapter_pages
+ALTER COLUMN url_armenian TYPE VARCHAR(500);
