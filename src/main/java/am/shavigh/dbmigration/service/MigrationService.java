@@ -75,6 +75,7 @@ public class MigrationService {
 
             createBookChapters(bibleBooksMap, postURL, result, iterationsCount, allChapters, lastProcessedPostUrl);
             setPrevAndNextLinks(allChapters);
+
             bibleBookChaptersRepo.saveAll(allChapters);
 
             // Migration successful, delete checkpoint
@@ -229,7 +230,12 @@ public class MigrationService {
                             }
 
                             var page = mysqlRepo.findPageByPostName(name);
+                            if (page.size() > 1) {
+                                page = page.stream().filter(p -> p.getPostTitle().length() > 22).toList();
+                            }
+
                             MigrationValidator.validatePost(page, name);
+
                             var uniquePage = page.getFirst();
 
                             var breadcrumbs = webScrapingService.getBreadcrumbsWithSelenium(u);

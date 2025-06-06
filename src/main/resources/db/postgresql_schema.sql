@@ -91,6 +91,15 @@ ALTER COLUMN url TYPE VARCHAR(500);
 ALTER TABLE bible_book_chapter_pages
 ALTER COLUMN url_armenian TYPE VARCHAR(500);
 
+ALTER TABLE bible_book_chapter_pages
+ALTER COLUMN title TYPE TEXT;
+
+ALTER TABLE bible_book_chapter_pages
+ALTER COLUMN url TYPE TEXT;
+
+ALTER TABLE bible_book_chapter_pages
+ALTER COLUMN url_armenian TYPE TEXT;
+
 -- for bible_book_chapters translation_id = 2
 -- Update `url`
 UPDATE bible_book_chapters bc
@@ -166,6 +175,8 @@ FROM bible_books bb
 WHERE bc.bible_book_id = bb.id
   AND bb.translation_id = 4
   AND bc.next_link LIKE 'bible/echmiadzin/%';
+
+
 
 
 
