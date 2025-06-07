@@ -176,6 +176,34 @@ WHERE bc.bible_book_id = bb.id
   AND bb.translation_id = 4
   AND bc.next_link LIKE 'bible/echmiadzin/%';
 
+-- Saints Behavior
+CREATE TABLE saints_behavior (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(50) NOT NULL,
+    url TEXT,
+    status VARCHAR(20) default 'publish'
+);
+
+-- Saints Behavior Section
+CREATE TABLE saints_behavior_section (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(50) NOT NULL,
+    content TEXT,
+    url TEXT,
+    status VARCHAR(20) default 'publish',
+    saints_behavior_id INT NOT NULL references saints_behavior(id)
+);
+
+-- Saints Behavior Section Pages
+CREATE TABLE saints_behavior_section_page (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    content TEXT,
+    url TEXT,
+    status VARCHAR(20) default 'publish',
+    saints_behavior_section_id INT NOT NULL references saints_behavior_section(id)
+);
+
 
 
 

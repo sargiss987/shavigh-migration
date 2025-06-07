@@ -28,7 +28,7 @@ public class TranslationService {
         TranslationKey key = new TranslationKey(text, sourceLang, targetLang);
         String cached = cache.get(key);
         if (cached != null) {
-            log.info("Cache hit for text: {}", text);
+            //log.info("Cache hit for text: {}", text);
             return cached;
         }
 
@@ -40,7 +40,7 @@ public class TranslationService {
                 .setTargetLanguageCode(targetLang)
                 .build();
 
-        log.info("Translating text via API: {}", text);
+        //log.info("Translating text via API: {}", text);
         var response = translationServiceClient.translateText(request);
         var result = response.getTranslationsCount() > 0
                 ? response.getTranslations(0).getTranslatedText()
