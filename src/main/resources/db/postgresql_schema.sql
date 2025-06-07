@@ -204,6 +204,22 @@ CREATE TABLE saints_behavior_section_page (
     saints_behavior_section_id INT NOT NULL references saints_behavior_section(id)
 );
 
+CREATE TABLE static_pages (
+    id SERIAL PRIMARY KEY,
+    unique_name VARCHAR(100),
+    status VARCHAR(20) default 'publish',
+    content TEXT
+);
+
+CREATE TABLE articles (
+    id SERIAL PRIMARY KEY,
+    title text not NULL,
+    status VARCHAR(20) default 'publish',
+    content TEXT,
+    description TEXT,
+    url TEXT not NULL
+);
+
 
 
 
