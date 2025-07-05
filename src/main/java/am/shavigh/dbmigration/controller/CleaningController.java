@@ -17,4 +17,9 @@ public class CleaningController {
     public void cleanBibleBookChapters() {
        cleaningService.clean();
     }
+
+    @GetMapping("/clean/pages")
+    public void cleanBibleBookChapterPages() {
+        cleaningService.cleanPages();
+    }
 }

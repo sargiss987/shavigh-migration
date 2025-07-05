@@ -191,7 +191,8 @@ CREATE TABLE saints_behavior_section (
     content TEXT,
     url TEXT,
     status VARCHAR(20) default 'publish',
-    saints_behavior_id INT NOT NULL references saints_behavior(id)
+    saints_behavior_id INT NOT NULL references saints_behavior(id),
+    origin_id BIGINT
 );
 
 -- Saints Behavior Section Pages
@@ -201,7 +202,8 @@ CREATE TABLE saints_behavior_section_page (
     content TEXT,
     url TEXT,
     status VARCHAR(20) default 'publish',
-    saints_behavior_section_id INT NOT NULL references saints_behavior_section(id)
+    saints_behavior_section_id INT NOT NULL references saints_behavior_section(id),
+    origin_id BIGINT
 );
 
 CREATE TABLE static_pages (
