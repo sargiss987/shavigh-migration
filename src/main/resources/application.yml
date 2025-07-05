@@ -6,7 +6,7 @@ spring:
       password: shavigh
       driver-class-name: org.postgresql.Driver
     mysql:
-      jdbc-url: jdbc:mysql://localhost:3306/shavigh
+      jdbc-url: jdbc:mysql://localhost:3306/tr_posts_db
       username: root
       password: BrXThuQu74
       driver-class-name: com.mysql.cj.jdbc.Driver

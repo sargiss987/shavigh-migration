@@ -222,6 +222,15 @@ CREATE TABLE articles (
     url TEXT not NULL
 );
 
+ALTER TABLE bible_book_chapters
+ADD COLUMN attached boolean NOT NULL DEFAULT TRUE;
+
+ALTER TABLE bible_book_chapter_pages
+ADD COLUMN attached boolean NOT NULL DEFAULT TRUE;
+
+ALTER TABLE saints_behavior_section_page
+ADD COLUMN attached boolean NOT NULL DEFAULT TRUE;
+
 
 
 

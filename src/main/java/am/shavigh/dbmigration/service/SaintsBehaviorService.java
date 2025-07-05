@@ -65,7 +65,7 @@ public class SaintsBehaviorService {
             saintsBehavior.setSections(sections);
             saintsBehavior.setStatus("publish");
 
-            //saintsBehaviorRepo.save(saintsBehavior);
+            saintsBehaviorRepo.save(saintsBehavior);
             return content;
 
         } catch (Exception ex) {
