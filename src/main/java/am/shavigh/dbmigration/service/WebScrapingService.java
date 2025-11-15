@@ -1,6 +1,8 @@
 package am.shavigh.dbmigration.service;
 
+import am.shavigh.dbmigration.dto.BibleChapterExtract;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -13,11 +15,65 @@ import org.springframework.stereotype.Service;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.stream.Collectors;
 
 @Service
 public class WebScrapingService {
 
     private static final Logger log = LoggerFactory.getLogger(WebScrapingService.class);
+
+    public BibleChapterExtract getBreadcrumbsAndContentWithSelenium(String url) {
+        var driver = loadPageWithSelenium(url);
+        if (driver == null) {
+            log.error("Driver is null, unable to extract page data.");
+            return new BibleChapterExtract("", "");
+        }
+
+        var breadcrumbs = new StringBuilder();
+        String contentHtml = "";
+
+        try {
+            var wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+            var selector = By.cssSelector("nav.entry-breadcrumbs span.breadcrumb, nav.entry-breadcrumbs span.breadcrumb-current");
+
+            wait.until(ExpectedConditions.presenceOfElementLocated(selector));
+
+            var breadcrumbElements = driver.findElements(selector);
+
+            if (breadcrumbElements.isEmpty()) {
+                log.error("No breadcrumb elements found on page: {}", url);
+            }
+
+            for (var element : breadcrumbElements) {
+                breadcrumbs.append(element.getText().trim());
+            }
+
+
+            // 2) entry-content inner HTML (everything inside the div)
+            var contentSelector = By.cssSelector("div.entry-content");
+            wait.until(ExpectedConditions.presenceOfElementLocated(contentSelector));
+            var contentElem = driver.findElement(contentSelector);
+
+            // innerHTML (not including the div tag itself)
+            contentHtml = (String) ((JavascriptExecutor) driver)
+                    .executeScript("return arguments[0].innerHTML;", contentElem);
+
+
+        } catch (TimeoutException e) {
+            log.warn("Timed out waiting for elements on page: {}", url, e);
+        } catch (Exception e) {
+            log.error("Error extracting page with Selenium: {}", e.getMessage(), e);
+        } finally {
+            driver.quit();
+        }
+
+        log.info("Extracted breadcrumbs: {}", breadcrumbs);
+        if (contentHtml != null) {
+            contentHtml = contentHtml.trim();
+            log.info("Content HTML {}", contentHtml);
+        }
+        return new BibleChapterExtract(breadcrumbs.toString(), contentHtml);
+    }
 
     public String getBreadcrumbsWithSelenium(String url) {
         var breadcrumbs = new StringBuilder();
